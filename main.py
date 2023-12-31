@@ -1,13 +1,15 @@
 import os
 import text_parser
 import image_processor
-import text_to_speech
-import video_creator
+
+
+# import text_to_speech
+# import video_creator
 
 def main():
     # 让用户输入包含图片和文本文件的目录地址
-    # directory_path = input("请输入包含图片和文本文件的目录地址: ")
-    directory_path = "D:/Documents/私人文件/My Video/抖音视频创作/20231227独库公路"
+    directory_path = input("请输入包含图片和文本文件的目录地址: ")
+    # directory_path = "D:\Temp\20231227独库公路"
 
     # 初始化变量以存储图片路径和文本文件路径
     image_paths = []
@@ -18,9 +20,10 @@ def main():
         # 如果找到一个文本文件且之前没有找到，保存其路径
         if filename.endswith(".txt") and text_file_path is None:
             text_file_path = os.path.join(directory_path, filename)
+            # print("text_file_path: " + text_file_path)
         # 如果文件是图像（基于扩展名），添加到图像路径列表
-        elif filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
-            image_paths.append(os.path.join(directory_path, filename))
+        # elif filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
+        #    image_paths.append(os.path.join(directory_path, filename))
 
     # 打印找到的文本文件和图像文件路径
     # print("找到的文本文件路径:", text_file_path)
@@ -34,29 +37,30 @@ def main():
         return
 
     # 检查是否找到任何图像文件，如果没有，通知用户并退出
-    if not image_paths:
-        print("未找到图片文件，请确保目录中至少包含一个图片文件。")
-        return
+    # if not image_paths:
+    #     print("未找到图片文件，请确保目录中至少包含一个图片文件。")
+    #    return
 
     # 使用 text_parser 模块解析文本文件
     parsed_text = text_parser.parse(text_file_path)
 
     # 使用 image_processor 模块处理每个图像文件
-    processed_images = image_processor.process_images(image_paths)
-    # print("image processor done")
+    processed_images = image_processor.process_images(directory_path)
+    print("image processor done")
 
     # 使用 text_to_speech 模块将解析后的文本转换为语音
     # audio_clip = text_to_speech.convert_to_speech(parsed_text)
     lang = "zh-cn"
     slow = True
 
-    audio_clip = text_to_speech.process_text_to_speech(parsed_text, lang, slow)
+    # audio_clip = text_to_speech.process_text_to_speech(parsed_text, lang, slow)
 
     # 使用 video_creator 模块将处理过的图像和语音合成为视频
-    video_creator.make_video(processed_images, audio_clip, parsed_text)
+    # video_creator.make_video(processed_images, audio_clip, parsed_text)
 
     # 完成视频生成后，通知用户
     # print("视频生成成功！")
+
 
 # 确保当直接运行此脚本时才执行 main 函数
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ def parse(file_path):
     返回:
         dict: 一个字典，键为编号，值为按顺序对应编号的文本列表。
     """
+
     subtitles = {}
     encodings = ['GBK', 'ISO-8859-1', 'Windows-1252', 'utf-16', 'utf-8']
 
