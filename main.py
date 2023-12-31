@@ -2,7 +2,7 @@ import os
 import text_parser
 import image_processor
 import text_to_speech
-# import video_creator
+import video_creator
 
 def main():
     # 让用户输入包含图片和文本文件的目录地址
@@ -41,13 +41,6 @@ def main():
     # 使用 text_parser 模块解析文本文件
     parsed_text = text_parser.parse(text_file_path)
 
-    """
-    # 打印解析后的字幸字
-    for number, texts in parsed_text.items():
-        print(f"编号[{number}]:")
-        for text in texts:
-            print(f"  - {text}")
-    """
     # 使用 image_processor 模块处理每个图像文件
     processed_images = image_processor.process_images(image_paths)
     # print("image processor done")
@@ -55,18 +48,12 @@ def main():
     # 使用 text_to_speech 模块将解析后的文本转换为语音
     # audio_clip = text_to_speech.convert_to_speech(parsed_text)
     lang = "zh-cn"
-    slow = "no"
+    slow = True
+
     audio_clip = text_to_speech.process_text_to_speech(parsed_text, lang, slow)
 
-    # 可以打印或以其他方式使用 audio_files
-    """
-    for number, files in audio_clip.items():
-        print(f"Number {number}:")
-        for filename, duration in files:
-            print(f"  File: {filename}, Duration: {duration}ms")
-    """
     # 使用 video_creator 模块将处理过的图像和语音合成为视频
-    # video_creator.create_video(processed_images, audio_clip)
+    video_creator.make_video(processed_images, audio_clip, parsed_text)
 
     # 完成视频生成后，通知用户
     # print("视频生成成功！")

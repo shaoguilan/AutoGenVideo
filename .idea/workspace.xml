@@ -5,12 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c32b9f52-cd78-48dc-84e6-0c3d2cac7f78" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/image_processor.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/text_parser.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/text_to_speech.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/video_creator.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/video_creator.py" beforeDir="false" afterPath="$PROJECT_DIR$/video_creator.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
