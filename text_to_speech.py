@@ -32,21 +32,26 @@ def process_text_to_speech(parsed_text, lang='en', slow=False):
     处理一个文本集合，将每一段文本转换为语音。
 
     参数:
-        parsed_text (dict): 解析后的文本集合。
+        parsed_text (list): 解析后的文本集合, 结构：编号、同一编号下的顺序号、文本。
         lang (str): 语音的语言。
         slow (bool): 是否以慢速说话。
 
     返回:
-        dict: 键为原文本编号，值为包含语音文件路径和持续时间的列表。
+        list: 键为原文本编号，值为包含语音文件路径和持续时间的列表。
     """
-    audio_files = {}
+    audio_files = []
     # 遍历解析后的文本集合
-    for number, texts in parsed_text.items():
-        audio_files[number] = []
-        for text in texts:
-            # 对每个文本片段进行语音转换
-            filename, duration = text_to_speech_segment(text, lang, slow)
-            # 将结果添加到对应编号的列表中
-            audio_files[number].append((filename, duration))
+    for number, seq, text in parsed_text:
+        # 对每个文本片段进行语音转换
+        filename, duration = text_to_speech_segment(text, lang, slow)
+        # 将结果添加到对应编号的列表中
+        audio_files.append((number, seq, filename, duration))
+    # audio_files最后存了多少条数据
+    total_entries = 0
 
+    for numbers, seqs, files, durations in audio_files:
+        total_entries += len(files)
+
+    # print(f"总共存储了 {total_entries} 条数据在 audio_files 中。")
+    # input()
     return audio_files

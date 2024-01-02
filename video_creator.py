@@ -1,103 +1,75 @@
 import cv2
-import subprocess
+from moviepy.editor import concatenate_videoclips, AudioFileClip, VideoFileClip
 import os
-import numpy as np
+import codecs
+import numpy
+from PIL import Image, ImageDraw, ImageFont
 
-def create_video_clip(image, audio_info, text, output_clip):
+#coding=utf-8
+#中文乱码处理
+def cv2ImgAddText(img, text, left, top, textColor=(0, 255, 0), textSize=20):
+    if (isinstance(img, numpy.ndarray)):  #判断是否OpenCV图片类型
+        img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    draw = ImageDraw.Draw(img)
+    fontText = ImageFont.truetype(
+        "font/simsun.ttc", textSize, encoding="utf-8")
+    draw.text((left, top), text, textColor, font=fontText)
+    return cv2.cvtColor(numpy.asarray(img), cv2.COLOR_RGB2BGR)
+
+
+def make_video(parsed_text, audio_files, images, output_filename):
     """
-    为单张图片和对应的音频创建视频片段。
+    根据提供的文本、音频文件和图片创建视频。
 
     参数:
-        image (numpy.ndarray): 处理过的图像数据。
-        audio_info (list): 对应音频文件的信息，包括路径和持续时间。
-        text (list): 要添加到视频中的文本列表。
-        output_clip (str): 输出视频片段的文件名。
+    parsed_text - 解析文本列表，格式为 [(编号, 顺序号, 文本), ...]
+    audio_files - 音频文件信息列表，格式为 [(编号, 顺序号, 文件路径, 持续时间), ...]
+    images - 图片列表，格式为 [(编号, 图片对象), ...]
+    output_filename - 最终视频的输出文件名
     """
-    # 将 PIL Image 对象转换为 NumPy 数组
-    np_image = np.array(image)
 
-    # 确定视频尺寸
-    height, width, _ = np_image.shape
-
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video_clip = cv2.VideoWriter(output_clip, fourcc, 1, (width, height))
-
-    # 音频总时长（秒）
-    total_duration = sum(duration for _, duration in audio_info) / 1000
-
-    # 计算需要重复图像的次数（每秒一帧）
-    frame_count = int(total_duration)
-
-    # 为视频添加图像帧和文本
-    for _ in range(int(total_duration)):
-        frame = np.copy(np_image)
-        # 将文本添加到图像帧上
-        y_offset = 50  # 文本起始位置的垂直偏移量
-        for text_line in text:
-            cv2.putText(frame, text_line, (50, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-            y_offset += 30  # 为下一行文本调整偏移量
-
-        video_clip.write(frame)
-
-    video_clip.release()
-    print(f"请检查中间视频文件 {output_clip} 以确认视频内容。")
-    input()
-
-    # 添加音频到视频
-    print("添加音频到视频")
-    audio_cmd = ['ffmpeg', '-i', output_clip]
-    for audio_file, _ in audio_info:
-        audio_cmd += ['-i', audio_file]
-    audio_cmd += ['-c:v', 'copy', '-c:a', 'aac', '-strict', 'experimental', output_clip.replace('.mp4', '_audio.mp4')]
-    subprocess.run(audio_cmd, shell=True)
-
-    # 删除原始视频片段，保留添加了音频的版本
-    os.remove(output_clip)
-    os.rename(output_clip.replace('.mp4', '_audio.mp4'), output_clip)
-
-def make_video(processed_images, audio_files, parsed_text, output_file="output1.mp4"):
-    """
-    根据处理过的图像、音频和文本创建视频。
-
-    参数:
-        processed_images (list): 处理过的图像数据列表，包含图像 numpy 数组和编号。
-        audio_files (dict): 音频文件信息的字典，键为编号。
-        parsed_text (dict): 解析过的文本，键为编号。
-        output_file (str): 最终视频的输出文件名。
-    """
     temp_clips = []
 
-    # 为每张图片和对应的音频创建视频片段
-    for img, number in processed_images:
-        output_clip = f"temp_clip_{number}.mp4"
-        create_video_clip(img, audio_files[number], parsed_text[number], output_clip)
-        temp_clips.append(output_clip)
+    for img_number, img in images:
+        # 找到与当前图片编号相匹配的音频和文本
+        relevant_audios = [af for af in audio_files if af[0] == img_number]
+        relevant_texts = [pt for pt in parsed_text if pt[0] == img_number]
 
-    # 创建一个包含所有视频片段文件名的文本文件
-    with open('concat_list.txt', 'w') as f:
-        for clip in temp_clips:
-            f.write(f"file '{clip}'\n")
+        # 获取图片的尺寸信息
+        height, width, _ = img.shape
 
-    # 使用 ffmpeg 将所有片段合并成最终的视频
-    # concat_cmd = ['ffmpeg', '-f', 'concat', '-safe', '0', '-i', 'concat_list.txt', '-c', 'copy', output_file]
-    # subprocess.run(concat_cmd)
+        # 初始化视频写入器
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        temp_video_path = f"temp_video_{img_number}.mp4"
+        video_writer = cv2.VideoWriter(temp_video_path, fourcc, 24.0, (width, height))
 
-    # 创建一个包含所有视频片段文件名的文本文件
-    with open('concat_list.txt', 'w') as f:
-        for clip in temp_clips:
-            f.write(f"file '{clip}'\n")
+        # 对于每个相关的音频，创建视频片段
+        for (number, seq, text), (_, _, audio_path, duration) in zip(relevant_texts, relevant_audios):
+            audio_duration = AudioFileClip(audio_path).duration  # 获取音频持续时间
+            frames_needed = int(audio_duration * 24)  # 计算所需帧数，假设每秒24帧
 
-    # 使用 ffmpeg 将所有片段合并成最终的视频
-    print("使用 ffmpeg 将所有片段合并成最终的视频")
-    concat_cmd = ['ffmpeg', '-f', 'concat', '-safe', '0', '-i', 'concat_list.txt', '-c', 'copy', output_file]
-    subprocess.run(concat_cmd)
-    print("使用 ffmpeg 将所有片段合并成最终的视频成功！")
-    # 删除临时文件
-    os.remove('concat_list.txt')
+            # 为每一帧添加文本
+            for _ in range(frames_needed):
+                frame = img.copy()
+                text_left = 300 - len(text)
+                frame = cv2ImgAddText(frame, text, text_left, 500, (255, 255, 255), 20)
+                #cv2.putText(frame, text, (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                video_writer.write(frame)
 
-    # 清理临时文件
+        video_writer.release()
+
+        # 将音频添加到视频片段
+        clip = VideoFileClip(temp_video_path)
+        audio_clip = AudioFileClip(relevant_audios[0][2])  # 使用第一个音频
+        final_clip = clip.set_audio(audio_clip)
+        temp_clips.append(final_clip)
+
+    # 将所有视频片段拼接成一个完整的视频
+    final_video = concatenate_videoclips(temp_clips)
+    final_video.write_videofile(output_filename, codec='libx264')
+
+    # 清理临时视频文件
     for clip in temp_clips:
-        os.remove(clip)
+        os.remove(clip.filename)
 
-# 示例用法
-# make_video(processed_images, audio_files, parsed_text)
+

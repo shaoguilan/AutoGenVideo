@@ -8,24 +8,34 @@ def parse(file_path):
         file_path (str): 文本文件的路径。
 
     返回:
-        dict: 一个字典，键为编号，值为按顺序对应编号的文本列表。
+        parsed_data: 一个列表：每行的编号，同一编号的顺序号，每行内容。
     """
 
-    subtitles = {}
-    encodings = ['GBK', 'ISO-8859-1', 'Windows-1252', 'utf-16', 'utf-8']
+    parsed_data = []
+    current_number = None
+    sequence_number = 0
+    encoding = "GBK"
 
-    for encoding in encodings:
-        try:
-            with open(file_path, 'r', encoding=encoding) as file:
-                subtitles = {}
-                for line in file:
-                    match = re.match(r'\[(\d+)\](.*)', line)
-                    if match:
-                        number, text = match.groups()
-                        subtitles.setdefault(number, []).append(text.strip())
-                return subtitles
-        except UnicodeDecodeError:
-            print(f"尝试使用 {encoding} 编码读取文件时出错，尝试其他编码。")
+    try:
+        with open(file_path, 'r', encoding=encoding) as file:
+             # 从每行中提取编号和文本
+             for line in file:
+                # 从每行中提取编号和文本
+                if line.startswith('['):
+                    number = int(line[line.find('[') + 1: line.find(']')])
+                    text = line[line.find(']') + 1:].strip()
 
-    print(f"无法读取文件: {file_path}，请检查文件编码。")
-    return None
+                    # 检查编号是否改变
+                    if number != current_number:
+                        current_number = number
+                        sequence_number = 1
+                    else:
+                        sequence_number += 1
+
+                    # 将提取的数据添加到列表
+                    parsed_data.append((number, sequence_number, text))
+    except UnicodeDecodeError:
+        print(f"尝试使用 {encoding} 编码读取文件时出错，尝试其他编码。")
+        return None
+
+    return parsed_data

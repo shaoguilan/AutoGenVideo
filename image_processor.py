@@ -30,9 +30,6 @@ def resize_image(image, target_size=(800, 600)):
     #     resized_image = resize_image(image, (800, 600))
 
 def process_images(folder_path, size=(800, 600)):
-
-    print("folder_path: " + folder_path)
-
     file_name_list = os.listdir(folder_path)
     image_file_name_list = []
 
@@ -40,21 +37,20 @@ def process_images(folder_path, size=(800, 600)):
         # 如果文件是图像（基于扩展名），添加到图像路径列表
         if file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
             image_file_name_list.append(file_name)
-            print("file_name: " + file_name)
-
 
     frames = []  # 创建一个列表来存储图片数据和编号
     for image_file_name in image_file_name_list:
-        print("image_file_full_name: " + os.path.join(folder_path, image_file_name))
-        input()
         img = cv2.imread(folder_path + "/" + image_file_name)
         if img is not None:
             img = resize_image(img, size)  # 调整图片大小
             image_number = int(image_file_name.split('.')[0])  # 提取编号
-            print("image_number")
-            print(image_number)
-            input()
             frames.append((image_number, img))  # 将编号和图片作为元组添加到列表中
+            # 保存图片到临时文件夹
+            #temp_folder_path = folder_path + "/" + "temp_photo"
+            #temp_image_path = os.path.join(temp_folder_path, f"temp_{image_number}.jpg")
+            #cv2.imwrite(temp_image_path, img)
+            #print("img number is: ")
+            #print(image_number)
 
     if frames is None:
         print("cannot find image file")
