@@ -40,17 +40,16 @@ def process_images(folder_path, size=(800, 600)):
 
     frames = []  # 创建一个列表来存储图片数据和编号
     for image_file_name in image_file_name_list:
-        img = cv2.imread(folder_path + "/" + image_file_name)
+        img = cv2.imread(os.path.join(folder_path, image_file_name))
         if img is not None:
             img = resize_image(img, size)  # 调整图片大小
             image_number = int(image_file_name.split('.')[0])  # 提取编号
             frames.append((image_number, img))  # 将编号和图片作为元组添加到列表中
             # 保存图片到临时文件夹
-            #temp_folder_path = folder_path + "/" + "temp_photo"
+            #temp_folder_path = "test"
             #temp_image_path = os.path.join(temp_folder_path, f"temp_{image_number}.jpg")
             #cv2.imwrite(temp_image_path, img)
-            #print("img number is: ")
-            #print(image_number)
+
 
     if frames is None:
         print("cannot find image file")

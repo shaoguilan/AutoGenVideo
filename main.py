@@ -1,13 +1,21 @@
 import os
+import configparser
 import text_parser
 import image_processor
 import text_to_speech
 import video_creator
 
 def main():
-    # 让用户输入包含图片和文本文件的目录地址
-    directory_path = input("请输入包含图片和文本文件的目录地址: ")
-    directory_path = directory_path.strip()
+
+    # 读取参数
+    # 创建配置解析器对象
+    config = configparser.ConfigParser()
+    # 读取配置文件
+    config.read('config.txt')
+
+    # 读取包含图片和文本文件的目录地址
+    directory_path = config.get('Default', r'folder_path')
+
     # 初始化变量以存储图片路径和文本文件路径
     image_paths = []
     text_file_path = None
@@ -37,13 +45,17 @@ def main():
     processed_images = image_processor.process_images(directory_path)
 
     # 使用 text_to_speech 模块将解析后的文本转换为语音
-    lang = "zh-cn"
-    slow = True
+    lang = config.get('Default', 'lang')
+    speaker_id = config.get('Default', 'speaker_id')
 
-    audio_clip = text_to_speech.process_text_to_speech(parsed_text, lang, slow)
+    audio_clip = text_to_speech.process_text_to_speech(parsed_text, lang, speaker_id)
+    if audio_clip is None:
+        print("get audio files failed!")
+        return
 
     #使用video_creator模块将处理过的图像和语音合成为视频
-    video_creator.make_video(parsed_text, audio_clip, processed_images, output_filename="output_video.mp4")
+    output_filename = os.path.join(directory_path, config.get('Default', 'output_filename'))
+    video_creator.make_video(parsed_text, audio_clip, processed_images, output_filename)
 
     # 完成视频生成后，通知用户
     print("视频生成成功!")

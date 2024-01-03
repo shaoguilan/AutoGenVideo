@@ -1,5 +1,6 @@
 import cv2
-from moviepy.editor import concatenate_videoclips, AudioFileClip, VideoFileClip
+from moviepy.editor import concatenate_videoclips, AudioFileClip, VideoFileClip, concatenate_audioclips
+from pydub import AudioSegment
 import os
 import codecs
 import numpy
@@ -29,6 +30,8 @@ def make_video(parsed_text, audio_files, images, output_filename):
     """
 
     temp_clips = []
+    temp_video_paths = []
+    audio_clips = []
 
     for img_number, img in images:
         # 找到与当前图片编号相匹配的音频和文本
@@ -40,36 +43,51 @@ def make_video(parsed_text, audio_files, images, output_filename):
 
         # 初始化视频写入器
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        temp_video_path = f"temp_video_{img_number}.mp4"
+        temp_video_path = f"temp_video_{hash(str(img_number))}.mp4"
+        temp_video_paths.append(temp_video_path)
         video_writer = cv2.VideoWriter(temp_video_path, fourcc, 24.0, (width, height))
 
         # 对于每个相关的音频，创建视频片段
-        for (number, seq, text), (_, _, audio_path, duration) in zip(relevant_texts, relevant_audios):
-            audio_duration = AudioFileClip(audio_path).duration  # 获取音频持续时间
+        for (number, seq, text), (_, _, audio_path, audio_duration) in zip(relevant_texts, relevant_audios):
+            #audio_duration = AudioFileClip(audio_path).duration  # 获取音频持续时间
             frames_needed = int(audio_duration * 24)  # 计算所需帧数，假设每秒24帧
-
-            # 为每一帧添加文本
+           # 为每一帧添加文本
             for _ in range(frames_needed):
                 frame = img.copy()
                 text_left = 300 - len(text)
                 frame = cv2ImgAddText(frame, text, text_left, 500, (255, 255, 255), 20)
-                #cv2.putText(frame, text, (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
                 video_writer.write(frame)
 
         video_writer.release()
 
-        # 将音频添加到视频片段
-        clip = VideoFileClip(temp_video_path)
-        audio_clip = AudioFileClip(relevant_audios[0][2])  # 使用第一个音频
-        final_clip = clip.set_audio(audio_clip)
-        temp_clips.append(final_clip)
-
     # 将所有视频片段拼接成一个完整的视频
-    final_video = concatenate_videoclips(temp_clips)
+    video_clips = [VideoFileClip(path) for path in temp_video_paths]
+    final_video = concatenate_videoclips(video_clips)
+
+    # 将音频添加到视频片段
+    for audio_file in audio_files:
+        audio_path = audio_file[2]
+        clip = AudioFileClip(audio_path)
+        audio_clips.append(clip)
+
+    # 如果有多个音频片段，将它们合并成一个音频片段
+    if len(audio_clips) > 1:
+        final_audio = concatenate_audioclips(audio_clips)
+    else:
+        final_audio = audio_clips[0]
+
+    # 将合并后的音频设置为视频的音频
+    final_video = final_video.set_audio(final_audio)
+
+    # 导出视频
     final_video.write_videofile(output_filename, codec='libx264')
 
     # 清理临时视频文件
-    for clip in temp_clips:
-        os.remove(clip.filename)
+    for temp_video_path in temp_video_paths:
+        os.remove(temp_video_path)
 
-
+    #清理临时音频文件
+    
+    for audio_file in audio_files:
+        file_path = audio_file[2]
+        os.remove(file_path)

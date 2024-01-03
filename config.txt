@@ -1,0 +1,5 @@
+[Default]
+folder_path=d:\temp\20231227
+lang=zh
+speaker_id=8
+output_filename=output_video2.mp4
